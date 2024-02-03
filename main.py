@@ -38,27 +38,33 @@ def simplex(func_obj, restricoes, var_base):
     print("CNT: ", cnt, "\n")
 
     # Passo 1: calcular a solução básica atual
-    print("Passo 1: calcular a solução básica atual\n")
+    print("///////// Passo 1: calcular a solução básica atual\n")
     b = np.array([restricoes[i][-1] for i in range(len(restricoes))])
+    print("b: ", b, "\n")
     Binv = np.linalg.inv(base)
     Xb = np.matmul(Binv, b)
     print("Xb:", Xb, "\n")
 
     # Passo 2: calcular os custos relativos
-    print("Passo 2: calcular os custos relativos\n")
+    print("///////// Passo 2: calcular os custos relativos\n")
       # i)
-    lmbd = np.matmul(cbt, Binv)
-    print("lambda_: ", lmbd, "\n")
+    lambdaT = np.matmul(cbt, Binv)
+    print("lambdaT: ", lambdaT, "\n")
       # ii)
-    Cn = np.array([cnt[i] - np.matmul(lmbd, nao_base[:,i]) for i in range(len(nao_base[0]))])
+    Cn = np.array([cnt[i] - np.matmul(lambdaT, nao_base[:,i]) for i in range(len(nao_base[0]))])
     print("Cn: ", Cn, "\n")
       # iii)
     k = np.argmin(Cn)
-    print("k: ", k, "\n")
-    print("coluna", k, "entra na base\n")
+    print("k: ", k+1, "\n")
+    print("coluna", k+1, "entra na base\n")
 
     # Passo 3: verificar se a solução atual é ótima
-    # if np.all(C >= 0):    
+    print("///////// Passo 3: verificar se a solução atual é ótima\n")
+    if Cn[k] >= 0:
+      print("solução é ótima\n")
+      return np.append(b, cnt)
+    else:
+      print("Cnk < 0, solução não é ótima\n")
 
     # Passo 4: calcular a solução simplex
 
@@ -67,7 +73,6 @@ def simplex(func_obj, restricoes, var_base):
     # Passo 6: atualização
 
     iteracoes += 1
-
 
 def main():
   # arquivo de entrada?
@@ -80,7 +85,8 @@ def main():
                 [0, 2, 0, 0, 1, 12]])
   var_base = np.array([2, 3, 4])
 
-  simplex(func_obj, restricoes, var_base)
+  solucao = simplex(func_obj, restricoes, var_base)
+  print("Solução: ", solucao)
 
 if __name__ == "__main__":
     main()
