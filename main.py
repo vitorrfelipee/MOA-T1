@@ -42,17 +42,29 @@ def simplex(func_obj, restricoes, var_base):
     b = np.array([restricoes[i][-1] for i in range(len(restricoes))])
     Binv = np.linalg.inv(base)
     Xb = np.matmul(Binv, b)
-    print("Xb: \n", Xb, "\n")
+    print("Xb:", Xb, "\n")
 
     # Passo 2: calcular os custos relativos
+    print("Passo 2: calcular os custos relativos\n")
+      # i)
+    lmbd = np.matmul(cbt, Binv)
+    print("lambda_: ", lmbd, "\n")
+      # ii)
+    Cn = np.array([cnt[i] - np.matmul(lmbd, nao_base[:,i]) for i in range(len(nao_base[0]))])
+    print("Cn: ", Cn, "\n")
+      # iii)
+    k = np.argmin(Cn)
+    print("k: ", k, "\n")
+    print("coluna", k, "entra na base\n")
 
     # Passo 3: verificar se a solução atual é ótima
+    # if np.all(C >= 0):    
 
     # Passo 4: calcular a solução simplex
 
     # Passo 5: determinar variavel a sair da base
 
-    # Passo 6: atualizar a base
+    # Passo 6: atualização
 
     iteracoes += 1
 
