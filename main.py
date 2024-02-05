@@ -20,13 +20,23 @@ def forma_padrao(entrada):
     for linha in arq.readlines():
         linha = linha.strip()
 
-        # le a função objetivo
+        # le a função objetivo min
         if linha.startswith('min'):
+          aux = linha.split(' ');
+          func_obj.append(int(aux[1]))
+          for i in range(3, len(aux)):
+            if aux[i].isdigit():
+              func_obj.append(int(aux[i-1] + aux[i]))
+
+        # le a função objetivo max
+        if linha.startswith('max'):
           aux = linha.split(' ');
           func_obj.append(-int(aux[1]))
           for i in range(3, len(aux)):
             if aux[i].isdigit():
               func_obj.append(-int(aux[i-1] + aux[i]))
+
+        # variaveis livres???
 
         # le as restrições
         elif linha.startswith('s.a'):
@@ -36,7 +46,7 @@ def forma_padrao(entrada):
           for i in range(3, len(aux)):
             if aux[i].isdigit() and (aux[i-1] == '+' or aux[i-1] == '-'):
               restricao.append(int(aux[i-1] + aux[i]))
-            elif aux[i] == '<=' or aux[i] == '>=':
+            elif aux[i] == '<=' or aux[i] == '>=' or aux[i] == '<' or aux[i] == '>':
               var_adicionais.append(num_linha)
               func_obj.append(0)  # adiciona variáveis adicionais na função objetivo
             elif aux[i] != '=':
