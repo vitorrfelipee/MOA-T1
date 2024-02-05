@@ -167,8 +167,15 @@ def simplex(func_obj, restricoes):
       return sol
     else:
       print("Cnk < 0, solução não é ótima\n")
+      
+    # Selecione a coluna k para entrar na base
+    k = np.argmin(Cn)
 
     # Passo 4: calcular a solução simplex
+    print("///////// Passo 4: Calcular o simplex\n")
+    ak = nao_base[:, k]
+    y = np.linalg.solve(base, ak)
+    print("y: ", y, "\n")
 
     # Passo 5: determinar variavel a sair da base
 
