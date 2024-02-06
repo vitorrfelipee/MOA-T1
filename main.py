@@ -90,30 +90,38 @@ def vars_decisao(restricoes):
       if i not in variaveis:
         variaveis.append(i)
         break
-      
+  
   print("Variáveis de decisão: ", variaveis)
   return np.array(variaveis)
-      
+
+# função que calcula a razao minima
+def calcular_razao_minima(Xb, y):
+    razoes = []
+    for i in range(len(Xb)):
+        if y[i] > 0:
+            razoes.append(Xb[i] / y[i])
+        else:
+            razoes.append(float('inf'))  # Adiciona infinito onde não é possível calcular a razão
+    indice_menor_razao = razoes.index(min(razoes))  # Índice da menor razão válida
+    return indice_menor_razao, razoes[indice_menor_razao]
+
 # função que determina qual variável sai da base
 def sair_base(Xb, y, var_base):
-  razoes = []
-  for i in range(len(y)):
-      if y[i] > 0:  # Ignora valores de y que não são maiores que 0
-          razoes.append(Xb[i] / y[i])
-      else:
-          razoes.append(float('inf'))  # Usa 'inf' para razões inválidas
+    razoes = []
+    for i in range(len(Xb)):
+        if y[i] > 0:
+            razoes.append(Xb[i] / y[i])
+        else:
+            razoes.append(float('inf'))  # Infinito é usado onde o cálculo da razão não é possível
+    indice_menor_razao = razoes.index(min(razoes))  # Encontrar o índice da menor razão válida
+    if min(razoes) == float('inf'):
+        print("Problema ilimitado.")
+        return None
+    variavel_sair = var_base[indice_menor_razao]
+    print("Variável a sair da base: ", variavel_sair)
+    return variavel_sair
 
-  # Encontrar o índice da menor razão positiva
-  indice_menor_razao = razoes.index(min(razoes))  # Obtém o índice do menor valor em razoes
 
-  # Se todas as razões forem 'inf', o problema é ilimitado
-  if min(razoes) == float('inf'):
-      print("Problema ilimitado.")
-      return None
-
-  variavel_sair = var_base[indice_menor_razao]
-  print("Variável a sair da base: ", variavel_sair)
-  return variavel_sair
 
 # função para execução do algoritmo simplex
 def simplex(func_obj, restricoes):
@@ -200,9 +208,10 @@ def simplex(func_obj, restricoes):
 
     # Passo 5: determinar variavel a sair da base
     print("///////// Passo 5: Determinar a variável a sair da base\n")
-    variavel_sair = sair_base(Xb.tolist(), y.tolist(), var_base.tolist())
+    variavel_sair = sair_base(Xb, y, var_base)
     if variavel_sair is None:
-      print("Não foi possível continuar o algoritmo pois o problema é ilimitado.")
+        print("Não foi possível continuar o algoritmo pois o problema é ilimitado.")
+        sys.exit(1)  # Encerra o programa indicando que o problema é ilimitado
 
     # Passo 6: atualização
 
@@ -227,4 +236,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
