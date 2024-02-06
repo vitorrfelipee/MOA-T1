@@ -121,8 +121,6 @@ def sair_base(Xb, y, var_base):
     print("Variável a sair da base: ", variavel_sair)
     return variavel_sair
 
-
-
 # função para execução do algoritmo simplex
 def simplex(func_obj, restricoes):
   # Inicializar as variáveis de decisão
