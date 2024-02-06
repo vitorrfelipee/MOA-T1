@@ -105,27 +105,35 @@ def calcular_razao_minima(Xb, y):
     indice_menor_razao = razoes.index(min(razoes))  # Índice da menor razão válida
     return indice_menor_razao, razoes[indice_menor_razao]
 
-# função que determina qual variável sai da base
 def sair_base(Xb, y, var_base):
-    razoes = []
-    for i in range(len(Xb)):
-        if y[i] > 0:
-            razoes.append(Xb[i] / y[i])
-        else:
-            razoes.append(float('inf'))  # Infinito é usado onde o cálculo da razão não é possível
-    indice_menor_razao = razoes.index(min(razoes))  # Encontrar o índice da menor razão válida
-    if min(razoes) == float('inf'):
-        print("Problema ilimitado.")
-        return None
-    variavel_sair = var_base[indice_menor_razao]
-    print("Variável a sair da base: ", variavel_sair)
-    return variavel_sair
+    razoes = np.array([Xb[i] / y[i] if y[i] > 0 else np.inf for i in range(len(y))])
+    indice_menor_razao = np.argmin(razoes)  # Encontra o índice da menor razão
 
+    if razoes[indice_menor_razao] == np.inf:
+        print("Problema ilimitado.")
+        sys.exit(1)  # Encerra o programa indicando que o problema é ilimitado
+
+    variavel_sair = var_base[indice_menor_razao]  # Encontra a variável correspondente a sair
+    
+    # Imprimir a variável que sai da base, não apenas o índice
+    print(f"Variável a sair da base: x{variavel_sair + 1} (Índice: {variavel_sair}, Valor: {Xb[indice_menor_razao]})")
+    return variavel_sair
+  
+def atualizar_bases(var_base, var_nao_base, variavel_sair, variavel_entrar):
+    # A função atualizar_bases atualiza as listas var_base e var_nao_base
+    indice_sair = np.where(var_base == variavel_sair)[0][0]
+    indice_entrar = np.where(var_nao_base == variavel_entrar)[0][0]
+    
+    var_base[indice_sair], var_nao_base[indice_entrar] = \
+        var_nao_base[indice_entrar], var_base[indice_sair]
+    return var_base, var_nao_base
+
+  
 # função para execução do algoritmo simplex
 def simplex(func_obj, restricoes):
+  
   # Inicializar as variáveis de decisão
   var_base = vars_decisao(restricoes)
-
   # Inicializar as variáveis não base
   var_nao_base = np.array([i for i in range(len(func_obj)) if i not in var_base])
 
@@ -145,11 +153,12 @@ def simplex(func_obj, restricoes):
 
   cbt = np.array([func_obj[i] for i in var_base])
   cnt = np.array([func_obj[i] for i in var_nao_base])
+  B_inv = np.linalg.inv(base)
+  Xb = np.dot(B_inv, restricoes[:, -1])
 
   # Iterações
   iteracoes = 0
-  iteracoes_max = 1
-  while(iteracoes < iteracoes_max):
+  while True:
     print("------------Iteração: ", iteracoes+1, "\n")
     print("B:\n", base, "\n")
     print("N:\n", nao_base, "\n")
@@ -205,14 +214,32 @@ def simplex(func_obj, restricoes):
     print("y: ", y, "\n")
 
     # Passo 5: determinar variavel a sair da base
-    print("///////// Passo 5: Determinar a variável a sair da base\n")
-    variavel_sair = sair_base(Xb, y, var_base)
-    if variavel_sair is None:
-        print("Não foi possível continuar o algoritmo pois o problema é ilimitado.")
-        sys.exit(1)  # Encerra o programa indicando que o problema é ilimitado
-
+    razoes = np.array([Xb[i] / y[i] if y[i] > 0 else np.inf for i in range(len(y))])
+    l = np.argmin(razoes)
+    if razoes[l] == np.inf:
+        print("O problema é ilimitado.")
+        sys.exit(1)
+        
+    variavel_sair = var_base[l]
+    print(f"Variável a sair da base: x{variavel_sair + 1}, Variável a entrar na base: x{var_nao_base[k] + 1}")
+   
     # Passo 6: atualização
+    variavel_sair = var_base[l]  # Variável que sai da base
+    var_base, var_nao_base = atualizar_bases(var_base, var_nao_base, variavel_sair, var_nao_base[k])  # Atualiza as variáveis de base e não base
 
+    # Recalcula a base e a não base para a próxima iteração
+    base = restricoes[:, var_base].astype(float)
+    nao_base = restricoes[:, var_nao_base].astype(float)
+    cbt = np.array([func_obj[i] for i in var_base])
+    cnt = np.array([func_obj[i] for i in var_nao_base])
+
+    # Recalcula a inversa da nova base
+    B_inv = np.linalg.inv(base)
+    
+    # Recalcula a solução básica atual
+    Xb = np.dot(B_inv, restricoes[:, -1])
+    
+    
     iteracoes += 1
 
 def main():
