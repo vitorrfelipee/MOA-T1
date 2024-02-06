@@ -16,6 +16,9 @@ def forma_padrao(entrada):
     num_linha = 0
     var_adicionais = []
     igualdades = []
+    irrestritas = []
+    positivas = []
+    negativas = []
 
     for linha in arq.readlines():
         linha = linha.strip()
@@ -23,37 +26,65 @@ def forma_padrao(entrada):
         # le a função objetivo min
         if linha.startswith('min'):
           aux = linha.split(' ');
-          func_obj.append(int(aux[1]))
+          func_obj.append(float(aux[1]))
           for i in range(3, len(aux)):
             if aux[i].isdigit():
-              func_obj.append(int(aux[i-1] + aux[i]))
+              func_obj.append(float(aux[i-1] + aux[i]))
 
         # le a função objetivo max
-        if linha.startswith('max'):
+        elif linha.startswith('max'):
           aux = linha.split(' ');
-          func_obj.append(-int(aux[1]))
+          func_obj.append(-float(aux[1]))
           for i in range(3, len(aux)):
             if aux[i].isdigit():
-              func_obj.append(-int(aux[i-1] + aux[i]))
-
-        # variaveis livres???
+              func_obj.append(-float(aux[i-1] + aux[i]))
 
         # le as restrições
         elif linha.startswith('s.a'):
           aux = linha.split(' ')
           restricao = []
-          restricao.append(int(aux[1]))
+          restricao.append(float(aux[1]))
+          igualdades.append(float(aux[-1]))
           for i in range(3, len(aux)):
-            if aux[i].isdigit() and (aux[i-1] == '+' or aux[i-1] == '-'):
-              restricao.append(int(aux[i-1] + aux[i]))
+            if aux[i].isnumeric and (aux[i-1] == '+' or aux[i-1] == '-'):
+              restricao.append(float(aux[i-1] + aux[i]))
             elif aux[i] == '<=' or aux[i] == '>=' or aux[i] == '<' or aux[i] == '>':
               var_adicionais.append(num_linha)
               func_obj.append(0)  # adiciona variáveis adicionais na função objetivo
-            elif aux[i] != '=':
-              igualdades.append(int(aux[i]))
           restricoes.append(restricao)
           num_linha += 1
-    
+
+        # le as variaveis irrestritas
+        elif linha.endswith('livre'):
+          aux = linha.split(' ')
+          var = int(aux[0][1:])-1
+          if var not in range(len(restricoes[0])):
+            print("Variável x{} não existe.".format(var+1))
+            sys.exit(1)
+          irrestritas.append(var)
+          func_obj.insert(var+1, -func_obj[var])  # adiciona variáveis irrestritas na função objetivo
+        
+        # le as variaveis com restricoes <= 0
+        elif linha.endswith('0'):
+          aux = linha.split(' ')
+          if not aux[1] == '<=':
+            break
+          print(linha)
+          var = int(aux[0][1:])-1
+          if var not in range(len(restricoes[0])):
+            print("Variável x{} não existe.".format(var+1))
+            sys.exit(1)
+          negativas.append(var)
+
+        # le as variaveis com restricoes >= L , L pertencendo aos reais
+        elif not linha.endswith('0'):
+          aux = linha.split(' ')
+          var = int(aux[0][1:])-1
+          if var not in range(len(restricoes[0])):
+            print("Variável x{} não existe.".format(var+1))
+            sys.exit(1)
+          positivas.append([var, float(aux[2])])
+
     # adiciona as variáveis adicionais na matriz de restrições
     for i in range(len(var_adicionais)):
       for j in range(len(restricoes)):
@@ -64,14 +95,35 @@ def forma_padrao(entrada):
 
     # adiciona as igualdades na matriz de restrições
     for i in range(len(igualdades)):
-      # se a igualdade for negativa, inverte o sinal da restrição
-      if igualdades[i] < 0:
+      restricoes[i].append(igualdades[i])
+
+    # adiciona as variáveis positivas na matriz de restrições
+    for i in range(len(positivas)):
+      for linha in restricoes:
+        for j in range(len(linha)):
+          if positivas[i][0] == j:
+            linha[-1] = linha[-1] - positivas[i][1]*linha[j]
+    
+    # adiciona as variáveis negativas na matriz de restrições
+    for i in range(len(negativas)):
+      for linha in restricoes:
+        for j in range(len(linha)):
+          if negativas[i] == j:
+            linha[j] = -linha[j]
+
+    # adiciona as variáveis irrestritas na matriz de restrições
+    for i in range(len(irrestritas)):
+      for linha in restricoes:
+        for j in range(len(linha)):
+          if irrestritas[i] == j:
+            linha.insert(j+1, -linha[j])
+
+    # se a igualdade for negativa, inverte o sinal da restrição
+    for i in range(len(restricoes)):
+      if restricoes[i][-1] < 0:
         for j in range(len(restricoes[i])):
-          restricoes[i][j] = -restricoes[i][j]
-        restricoes[i].append(-igualdades[i])
-      else:
-        restricoes[i].append(igualdades[i])
-      
+          restricoes[i][j] = -restricoes[i][j]      
+
     return {
       "func_obj": func_obj,
       "restricoes": restricoes
@@ -80,7 +132,7 @@ def forma_padrao(entrada):
 # função para identificar as variáveis da base
 def vars_decisao(restricoes):
   variaveis = []
-  for i in range(len(restricoes[0])):
+  for i in range(len(restricoes[0])-1):
     coluna = restricoes[:,i]
     if np.count_nonzero(coluna) == 1 and np.sum(coluna) == 1:
       variaveis.append(i)
@@ -169,7 +221,11 @@ def simplex(func_obj, restricoes):
     print("///////// Passo 1: calcular a solução básica atual\n")
     b = np.array([restricoes[i][-1] for i in range(len(restricoes))])
     print("b: ", b, "\n")
-    Binv = np.linalg.inv(base)
+    try: # Verifica se a matriz base possui inversa
+      Binv = np.linalg.inv(base)
+    except np.linalg.LinAlgError:
+      print("A matriz base não possui inversa.")
+      sys.exit(1)
     Xb = np.matmul(Binv, b)
     print("Xb:", Xb, "\n")
 
@@ -190,17 +246,17 @@ def simplex(func_obj, restricoes):
     print("///////// Passo 3: verificar se a solução atual é ótima\n")
     if Cn[k] >= 0:
       print("Cnk >= 0, solução é ótima\n")
-      sol = []
+      solucao = []
       b_index = 0
       cnt_index = 0
       for i in range(len(func_obj)):
         if i in var_base:
-          sol.append(b[b_index])
+          solucao.append(b[b_index])
           b_index += 1
         else:
-          sol.append(cnt[cnt_index])
+          solucao.append(cnt[cnt_index])
           cnt_index += 1
-      return sol
+      return solucao
     else:
       print("Cnk < 0, solução não é ótima\n")
       
@@ -208,12 +264,13 @@ def simplex(func_obj, restricoes):
     k = np.argmin(Cn)
 
     # Passo 4: calcular a solução simplex
-    print("///////// Passo 4: Calcular o simplex\n")
+    print("///////// Passo 4: calcular o simplex\n")
     ak = nao_base[:, k]
     y = np.linalg.solve(base, ak)
     print("y: ", y, "\n")
 
     # Passo 5: determinar variavel a sair da base
+    print("///////// Passo 5: determinar a variável a sair da base\n")
     razoes = np.array([Xb[i] / y[i] if y[i] > 0 else np.inf for i in range(len(y))])
     l = np.argmin(razoes)
     if razoes[l] == np.inf:
