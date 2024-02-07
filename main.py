@@ -8,6 +8,16 @@
 import numpy as np
 import sys
 
+# imprime uma função objetivo ou uma solução
+def printFunc(nome, func):
+  print(f"{nome}: ", end='')
+  for i in range(len(func)):
+    if i == len(func)-1:
+      print("x{} = {}".format(i+1, func[i]))
+    else:
+      print("x{} = {}".format(i+1, func[i]), end=', ')
+
+
 # função para leitura do arquivo de entrada e transformação do problema em forma padrao
 def forma_padrao(entrada):
   with open(entrada, 'r') as arq:
@@ -129,6 +139,7 @@ def forma_padrao(entrada):
       "restricoes": restricoes
     }
 
+
 # função para identificar as variáveis da base
 def vars_decisao(restricoes):
   variaveis = []
@@ -143,8 +154,14 @@ def vars_decisao(restricoes):
         variaveis.append(i)
         break
   
-  print("Variáveis de decisão: ", variaveis)
+  print("Variáveis de decisão: ", end='')
+  for i in range(len(variaveis)):
+    if i == len(variaveis)-1:
+      print(f"x{variaveis[i]+1}\n")
+    else:
+      print(f"x{variaveis[i]+1}", end=', ')
   return np.array(variaveis)
+
 
 # função que calcula a razao minima
 def calcular_razao_minima(Xb, y):
@@ -156,6 +173,7 @@ def calcular_razao_minima(Xb, y):
             razoes.append(float('inf'))  # Adiciona infinito onde não é possível calcular a razão
     indice_menor_razao = razoes.index(min(razoes))  # Índice da menor razão válida
     return indice_menor_razao, razoes[indice_menor_razao]
+
 
 def sair_base(Xb, y, var_base):
     razoes = np.array([Xb[i] / y[i] if y[i] > 0 else np.inf for i in range(len(y))])
@@ -171,6 +189,7 @@ def sair_base(Xb, y, var_base):
     print(f"Variável a sair da base: x{variavel_sair + 1} (Índice: {variavel_sair}, Valor: {Xb[indice_menor_razao]})")
     return variavel_sair
   
+
 def atualizar_bases(var_base, var_nao_base, variavel_sair, variavel_entrar):
     # A função atualizar_bases atualiza as listas var_base e var_nao_base
     indice_sair = np.where(var_base == variavel_sair)[0][0]
@@ -211,7 +230,7 @@ def simplex(func_obj, restricoes):
   # Iterações
   iteracoes = 0
   while True:
-    print("------------Iteração: ", iteracoes+1, "\n")
+    print("------------------------Iteração: ", iteracoes+1, "------------------------\n")
     print("B:\n", base, "\n")
     print("N:\n", nao_base, "\n")
     print("CBT: ", cbt, "\n")
@@ -227,6 +246,7 @@ def simplex(func_obj, restricoes):
       print("A matriz base não possui inversa.")
       sys.exit(1)
     Xb = np.matmul(Binv, b)
+    print("Binv:", Binv, "\n")
     print("Xb:", Xb, "\n")
 
     # Passo 2: calcular os custos relativos
@@ -247,12 +267,12 @@ def simplex(func_obj, restricoes):
     if Cn[k] >= 0:
       print("Cnk >= 0, solução é ótima\n")
       solucao = []
-      b_index = 0
+      Xb_index = 0
       cnt_index = 0
       for i in range(len(func_obj)):
         if i in var_base:
-          solucao.append(b[b_index])
-          b_index += 1
+          solucao.append(Xb[Xb_index])
+          Xb_index += 1
         else:
           solucao.append(cnt[cnt_index])
           cnt_index += 1
@@ -278,7 +298,7 @@ def simplex(func_obj, restricoes):
         sys.exit(1)
         
     variavel_sair = var_base[l]
-    print(f"Variável a sair da base: x{variavel_sair + 1}, Variável a entrar na base: x{var_nao_base[k] + 1}")
+    print(f"Variável a sair da base: x{variavel_sair + 1}, Variável a entrar na base: x{var_nao_base[k] + 1}\n")
    
     # Passo 6: atualização
     variavel_sair = var_base[l]  # Variável que sai da base
@@ -295,26 +315,28 @@ def simplex(func_obj, restricoes):
     
     # Recalcula a solução básica atual
     Xb = np.dot(B_inv, restricoes[:, -1])
-    
-    
+
     iteracoes += 1
+
+
 
 def main():
   if len(sys.argv) < 2:
     print("Uso: python3 main.py <arquivo de entrada>")
     return
+  
+  sys.stdout = open('output.txt', 'w')
+  sys.stdout.reconfigure(encoding='utf-8')
+  
   ppl = forma_padrao(sys.argv[1])
-  print(ppl)
 
-  # # Inicialização de um problema na forma padrão
-  # func_obj = np.array([-3, -5, 0, 0, 0])
-  # restricoes = np.array([[3, 2, 1, 0, 0, 18], 
-  #               [1, 0, 0, 1, 0, 4], 
-  #               [0, 2, 0, 0, 1, 12]])
-  # var_base = np.array([2, 3, 4])
+  printFunc("Função Objetivo", ppl.get("func_obj"))
+
+  print("Restrições:\n", np.array(ppl.get("restricoes")))
 
   solucao = simplex(np.array(ppl.get("func_obj")), np.array(ppl.get("restricoes")))
-  print("Solução: ", solucao)
+
+  printFunc("Solução", solucao)
 
 if __name__ == "__main__":
     main()
