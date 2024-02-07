@@ -29,9 +29,11 @@ def forma_padrao(entrada):
     irrestritas = []
     positivas = []
     negativas = []
+    sobras = []
 
     for linha in arq.readlines():
         linha = linha.strip()
+        print(func_obj)
 
         # le a função objetivo min
         if linha.startswith('min'):
@@ -67,6 +69,15 @@ def forma_padrao(entrada):
           restricoes.append(restricao)
           num_linha += 1
 
+        # le as variaveis com restricoes >= L , L pertencendo aos reais
+        elif not linha.endswith('0') and not linha.endswith('livre'):
+          aux = linha.split(' ')
+          var = int(aux[0][1:])-1
+          if var not in range(len(restricoes[0])):
+            print("Variável x{} não existe.".format(var+1))
+            sys.exit(1)
+          positivas.append([var, float(aux[2])])
+
         # le as variaveis irrestritas
         elif linha.endswith('livre'):
           aux = linha.split(' ')
@@ -75,7 +86,6 @@ def forma_padrao(entrada):
             print("Variável x{} não existe.".format(var+1))
             sys.exit(1)
           irrestritas.append(var)
-          func_obj.insert(var+1, -func_obj[var])  # adiciona variáveis irrestritas na função objetivo
         
         # le as variaveis com restricoes <= 0
         elif linha.endswith('0'):
@@ -89,14 +99,17 @@ def forma_padrao(entrada):
             sys.exit(1)
           negativas.append(var)
 
-        # le as variaveis com restricoes >= L , L pertencendo aos reais
-        elif not linha.endswith('0'):
-          aux = linha.split(' ')
-          var = int(aux[0][1:])-1
-          if var not in range(len(restricoes[0])):
-            print("Variável x{} não existe.".format(var+1))
-            sys.exit(1)
-          positivas.append([var, float(aux[2])])
+    # adiciona sobras na função objetivo
+    for i in range(len(positivas)):
+      for j in range(len(func_obj)):
+        if positivas[i][0] == j:
+          sobras.append(positivas[i][1]*func_obj[j])
+
+    # adiciona variáveis irrestriras na função objetivo
+    for i in range(len(irrestritas)):
+      for j in range(len(func_obj)):
+        if irrestritas[i] == j:
+          func_obj.insert(j+1, -func_obj[j])
 
     # adiciona as variáveis adicionais na matriz de restrições
     for i in range(len(var_adicionais)):
@@ -142,7 +155,8 @@ def forma_padrao(entrada):
 
     return {
       "func_obj": func_obj,
-      "restricoes": restricoes
+      "restricoes": restricoes,
+      "sobras": sobras,
     }
 
 
@@ -280,8 +294,7 @@ def simplex(func_obj, restricoes):
         solucao[i] = Xb[Xb_indice]
         Xb_indice += 1
       for i in var_nao_base:
-        solucao[i] = cnt[cnt_indice]
-        cnt_indice += 1      
+        solucao[i] = 0
       return solucao
     else:
       print("Cnk < 0, solução não é ótima\n")
@@ -340,9 +353,18 @@ def main():
 
   print("Restrições:\n", np.array(ppl.get("restricoes")))
 
-  solucao = simplex(np.array(ppl.get("func_obj")), np.array(ppl.get("restricoes")))
+  vars_solucao = simplex(np.array(ppl.get("func_obj")), np.array(ppl.get("restricoes")))
 
-  printFunc("Solução", solucao)
+  printFunc("Variaveis solução", vars_solucao)
+
+  print("Variáveis de sobra: ", ppl.get("sobras"))
+  solucao = 0
+  for i in ppl.get("func_obj"):
+    solucao += i * vars_solucao[ppl.get("func_obj").index(i)]
+  for i in ppl.get("sobras"):
+    solucao += i
+  print("Solução:", solucao)
+
 
 if __name__ == "__main__":
     main()
