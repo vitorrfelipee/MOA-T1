@@ -59,7 +59,10 @@ def forma_padrao(entrada):
             if aux[i].isnumeric and (aux[i-1] == '+' or aux[i-1] == '-'):
               restricao.append(float(aux[i-1] + aux[i]))
             elif aux[i] == '<=' or aux[i] == '>=' or aux[i] == '<' or aux[i] == '>':
-              var_adicionais.append(num_linha)
+              if aux[i] == '>=':
+                var_adicionais.append([num_linha, False])  
+              else:
+                var_adicionais.append([num_linha, True])
               func_obj.append(0)  # adiciona variáveis adicionais na função objetivo
           restricoes.append(restricao)
           num_linha += 1
@@ -98,14 +101,23 @@ def forma_padrao(entrada):
     # adiciona as variáveis adicionais na matriz de restrições
     for i in range(len(var_adicionais)):
       for j in range(len(restricoes)):
-        if var_adicionais[i] == j:
-          restricoes[j].append(1)
+        if var_adicionais[i][0] == j:
+          if var_adicionais[i][1]:
+            restricoes[j].append(1)
+          else:
+            restricoes[j].append(-1)
         else:
           restricoes[j].append(0)
 
     # adiciona as igualdades na matriz de restrições
     for i in range(len(igualdades)):
       restricoes[i].append(igualdades[i])
+
+    # se a igualdade for negativa, inverte o sinal da restrição
+    for i in range(len(restricoes)):
+      if restricoes[i][-1] < 0:
+        for j in range(len(restricoes[i])):
+          restricoes[i][j] = -restricoes[i][j] 
 
     # adiciona as variáveis positivas na matriz de restrições
     for i in range(len(positivas)):
@@ -128,12 +140,6 @@ def forma_padrao(entrada):
           if irrestritas[i] == j:
             linha.insert(j+1, -linha[j])
 
-    # se a igualdade for negativa, inverte o sinal da restrição
-    for i in range(len(restricoes)):
-      if restricoes[i][-1] < 0:
-        for j in range(len(restricoes[i])):
-          restricoes[i][j] = -restricoes[i][j]      
-
     return {
       "func_obj": func_obj,
       "restricoes": restricoes
@@ -145,15 +151,15 @@ def vars_decisao(restricoes):
   variaveis = []
   for i in range(len(restricoes[0])-1):
     coluna = restricoes[:,i]
-    if np.count_nonzero(coluna) == 1 and np.sum(coluna) == 1:
+    if np.count_nonzero(coluna) == 1: # and np.sum(coluna) == 1:
       variaveis.append(i)
   
   if len(variaveis) < len(restricoes):
-    for i in range(len(restricoes)):
+    for i in reversed(range(len(restricoes))):
       if i not in variaveis:
-        variaveis.append(i)
+        variaveis.insert(0,i)
         break
-  
+
   print("Variáveis de decisão: ", end='')
   for i in range(len(variaveis)):
     if i == len(variaveis)-1:
@@ -235,6 +241,7 @@ def simplex(func_obj, restricoes):
     print("N:\n", nao_base, "\n")
     print("CBT: ", cbt, "\n")
     print("CNT: ", cnt, "\n")
+    print("var_base: ", var_base, "\n")
 
     # Passo 1: calcular a solução básica atual
     print("///////// Passo 1: calcular a solução básica atual\n")
@@ -266,16 +273,15 @@ def simplex(func_obj, restricoes):
     print("///////// Passo 3: verificar se a solução atual é ótima\n")
     if Cn[k] >= 0:
       print("Cnk >= 0, solução é ótima\n")
-      solucao = []
-      Xb_index = 0
-      cnt_index = 0
-      for i in range(len(func_obj)):
-        if i in var_base:
-          solucao.append(Xb[Xb_index])
-          Xb_index += 1
-        else:
-          solucao.append(cnt[cnt_index])
-          cnt_index += 1
+      solucao = [0 for i in func_obj]
+      Xb_indice = 0
+      cnt_indice = 0
+      for i in var_base:
+        solucao[i] = Xb[Xb_indice]
+        Xb_indice += 1
+      for i in var_nao_base:
+        solucao[i] = cnt[cnt_indice]
+        cnt_indice += 1      
       return solucao
     else:
       print("Cnk < 0, solução não é ótima\n")

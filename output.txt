@@ -1,0 +1,150 @@
+Função Objetivo: x1 = -3.0, x2 = -5.0, x3 = 0, x4 = 0, x5 = 0
+Restrições:
+ [[ 3.  2.  1.  0.  0. 18.]
+ [ 1.  0.  0.  1.  0.  4.]
+ [ 0.  2.  0.  0.  1. 12.]]
+Variáveis de decisão: x3, x4, x5
+
+------------------------Iteração:  1 ------------------------
+
+B:
+ [[1. 0. 0.]
+ [0. 1. 0.]
+ [0. 0. 1.]] 
+
+N:
+ [[3. 2.]
+ [1. 0.]
+ [0. 2.]] 
+
+CBT:  [0. 0. 0.] 
+
+CNT:  [-3. -5.] 
+
+var_base:  [2 3 4] 
+
+///////// Passo 1: calcular a solução básica atual
+
+b:  [18.  4. 12.] 
+
+Binv: [[1. 0. 0.]
+ [0. 1. 0.]
+ [0. 0. 1.]] 
+
+Xb: [18.  4. 12.] 
+
+///////// Passo 2: calcular os custos relativos
+
+lambdaT:  [0. 0. 0.] 
+
+Cn:  [-3. -5.] 
+
+k:  2 
+
+coluna 2 entra na base
+
+///////// Passo 3: verificar se a solução atual é ótima
+
+Cnk < 0, solução não é ótima
+
+///////// Passo 4: calcular o simplex
+
+y:  [2. 0. 2.] 
+
+///////// Passo 5: determinar a variável a sair da base
+
+Variável a sair da base: x5, Variável a entrar na base: x2
+
+------------------------Iteração:  2 ------------------------
+
+B:
+ [[1. 0. 2.]
+ [0. 1. 0.]
+ [0. 0. 2.]] 
+
+N:
+ [[3. 0.]
+ [1. 0.]
+ [0. 1.]] 
+
+CBT:  [ 0.  0. -5.] 
+
+CNT:  [-3.  0.] 
+
+var_base:  [2 3 1] 
+
+///////// Passo 1: calcular a solução básica atual
+
+b:  [18.  4. 12.] 
+
+Binv: [[ 1.   0.  -1. ]
+ [ 0.   1.   0. ]
+ [ 0.   0.   0.5]] 
+
+Xb: [6. 4. 6.] 
+
+///////// Passo 2: calcular os custos relativos
+
+lambdaT:  [ 0.   0.  -2.5] 
+
+Cn:  [-3.   2.5] 
+
+k:  1 
+
+coluna 1 entra na base
+
+///////// Passo 3: verificar se a solução atual é ótima
+
+Cnk < 0, solução não é ótima
+
+///////// Passo 4: calcular o simplex
+
+y:  [3. 1. 0.] 
+
+///////// Passo 5: determinar a variável a sair da base
+
+Variável a sair da base: x3, Variável a entrar na base: x1
+
+------------------------Iteração:  3 ------------------------
+
+B:
+ [[3. 0. 2.]
+ [1. 1. 0.]
+ [0. 0. 2.]] 
+
+N:
+ [[1. 0.]
+ [0. 0.]
+ [0. 1.]] 
+
+CBT:  [-3.  0. -5.] 
+
+CNT:  [0. 0.] 
+
+var_base:  [0 3 1] 
+
+///////// Passo 1: calcular a solução básica atual
+
+b:  [18.  4. 12.] 
+
+Binv: [[ 0.33333333  0.         -0.33333333]
+ [-0.33333333  1.          0.33333333]
+ [ 0.          0.          0.5       ]] 
+
+Xb: [2. 2. 6.] 
+
+///////// Passo 2: calcular os custos relativos
+
+lambdaT:  [-1.   0.  -1.5] 
+
+Cn:  [1.  1.5] 
+
+k:  1 
+
+coluna 1 entra na base
+
+///////// Passo 3: verificar se a solução atual é ótima
+
+Cnk >= 0, solução é ótima
+
+Solução: x1 = 2.0, x2 = 6.0, x3 = 0.0, x4 = 2.0, x5 = 0.0
