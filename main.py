@@ -216,7 +216,7 @@ def atualizar_bases(var_base, var_nao_base, variavel_sair, variavel_entrar):
     indice_entrar = np.where(var_nao_base == variavel_entrar)[0][0]
     
     var_base[indice_sair], var_nao_base[indice_entrar] = \
-        var_nao_base[indice_entrar], var_base[indice_sair]
+    var_nao_base[indice_entrar], var_base[indice_sair]
     return var_base, var_nao_base
 
   
@@ -259,6 +259,7 @@ def simplex(func_obj, restricoes):
 
     # Passo 1: calcular a solução básica atual
     print("///////// Passo 1: calcular a solução básica atual\n")
+    print("X = Binv . Xb\n")
     b = np.array([restricoes[i][-1] for i in range(len(restricoes))])
     print("b: ", b, "\n")
     try: # Verifica se a matriz base possui inversa
@@ -272,6 +273,7 @@ def simplex(func_obj, restricoes):
 
     # Passo 2: calcular os custos relativos
     print("///////// Passo 2: calcular os custos relativos\n")
+    print("i- λt = Cbt . Binv\nii- Cn = Cnj - λt . anj \niii- Cnk = min (Cnj)\n")
       # i)
     lambdaT = np.matmul(cbt, Binv)
     print("lambdaT: ", lambdaT, "\n")
@@ -284,12 +286,12 @@ def simplex(func_obj, restricoes):
     print("coluna", k+1, "entra na base\n")
 
     # Passo 3: verificar se a solução atual é ótima
-    print("///////// Passo 3: verificar se a solução atual é ótima\n")
+    print("///////// Passo 3: verificar se a solução atual é ótima\n") 
+    print("Cn[k] >= 0\n")
     if Cn[k] >= 0:
       print("Cnk >= 0, solução é ótima\n")
       solucao = [0 for i in func_obj]
       Xb_indice = 0
-      cnt_indice = 0
       for i in var_base:
         solucao[i] = Xb[Xb_indice]
         Xb_indice += 1
@@ -301,23 +303,31 @@ def simplex(func_obj, restricoes):
       
     # Selecione a coluna k para entrar na base
     k = np.argmin(Cn)
+    
 
     # Passo 4: calcular a solução simplex
-    print("///////// Passo 4: calcular o simplex\n")
+    print("///////// Passo 4: calcular o simplex")
+    print("y = Binv . ank\n")
     ak = nao_base[:, k]
+    print("Base B atual:\n", base)
+    print("\nVetor ak (coluna que entra na base):\n", ak)
     y = np.linalg.solve(base, ak)
-    print("y: ", y, "\n")
-
+    print("\nVetor y (solução simplex):\n", y, "\n")
+    
+    
     # Passo 5: determinar variavel a sair da base
     print("///////// Passo 5: determinar a variável a sair da base\n")
+    print("Ê = min {Xb[i] / y[i]}\n")
     razoes = np.array([Xb[i] / y[i] if y[i] > 0 else np.inf for i in range(len(y))])
+    print("Matriz das razões:\n", razoes)
     l = np.argmin(razoes)
     if razoes[l] == np.inf:
         print("O problema é ilimitado.")
         sys.exit(1)
         
     variavel_sair = var_base[l]
-    print(f"Variável a sair da base: x{variavel_sair + 1}, Variável a entrar na base: x{var_nao_base[k] + 1}\n")
+    print(f"\nVariável a sair da base: x{variavel_sair + 1}, Variável a entrar na base: x{var_nao_base[k] + 1}\n")
+
    
     # Passo 6: atualização
     variavel_sair = var_base[l]  # Variável que sai da base
