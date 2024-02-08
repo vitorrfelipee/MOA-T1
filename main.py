@@ -3,7 +3,7 @@
 # Professor: Mateus Filipe Tavares Carvalho
 
 # Implementação do algoritmo Simplex para identificação da solução
-# ótima de um problema de programação linear de minimização
+# ótima de um problema de programação linear de minimização ou maximização
 
 import numpy as np
 import sys
