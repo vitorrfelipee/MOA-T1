@@ -9,13 +9,15 @@ import numpy as np
 import sys
 
 # imprime uma função objetivo ou uma solução
-def printFunc(nome, func):
-  print(f"{nome}: ", end='')
+def printFunc(nome, func, answ=False):
+  print(f"{nome}: ")
   for i in range(len(func)):
-    if i == len(func)-1:
+    if answ and func[i] != 0:
       print("x{} = {}".format(i+1, func[i]))
-    else:
-      print("x{} = {}".format(i+1, func[i]), end=', ')
+    elif not answ:
+      print(f"{func[i]}x{i+1}", end='  ')
+  if not answ:
+    print()
 
 
 # função para leitura do arquivo de entrada e transformação do problema em forma padrao
@@ -30,10 +32,10 @@ def forma_padrao(entrada):
     positivas = []
     negativas = []
     sobras = []
+    inverte = []
 
     for linha in arq.readlines():
         linha = linha.strip()
-        print(func_obj)
 
         # le a função objetivo min
         if linha.startswith('min'):
@@ -63,6 +65,8 @@ def forma_padrao(entrada):
             elif aux[i] == '<=' or aux[i] == '>=' or aux[i] == '<' or aux[i] == '>':
               if aux[i] == '>=':
                 var_adicionais.append([num_linha, False])  
+              if aux[i] == '<=' and int(aux[i+1]) == 0:
+                inverte.append(num_linha)
               else:
                 var_adicionais.append([num_linha, True])
               func_obj.append(0)  # adiciona variáveis adicionais na função objetivo
@@ -98,6 +102,11 @@ def forma_padrao(entrada):
             print("Variável x{} não existe.".format(var+1))
             sys.exit(1)
           negativas.append(var)
+
+    # inverte as restrições que possuem sinal de menor ou igual e valor negativo
+    for i in inverte:
+      for j in range(len(restricoes[i])):
+        restricoes[i][j] = -restricoes[i][j]
 
     # adiciona sobras na função objetivo
     for i in range(len(positivas)):
@@ -163,17 +172,21 @@ def forma_padrao(entrada):
 # função para identificar as variáveis da base
 def vars_decisao(restricoes):
   variaveis = []
+
+  # escolhe as colunas que possuem apenas um valor diferente de zero
   for i in range(len(restricoes[0])-1):
     coluna = restricoes[:,i]
-    if np.count_nonzero(coluna) == 1: # and np.sum(coluna) == 1:
+    if np.count_nonzero(coluna) == 1:
       variaveis.append(i)
   
+  # se o número de variáveis de decisão for menor que o número de restrições adiciona as colunas mais a direita
   if len(variaveis) < len(restricoes):
     for i in reversed(range(len(restricoes))):
       if i not in variaveis:
         variaveis.insert(0,i)
         break
 
+  # mostra as variáveis de decisão
   print("Variáveis de decisão: ", end='')
   for i in range(len(variaveis)):
     if i == len(variaveis)-1:
@@ -259,7 +272,7 @@ def simplex(func_obj, restricoes):
 
     # Passo 1: calcular a solução básica atual
     print("///////// Passo 1: calcular a solução básica atual\n")
-    print("X = Binv . Xb\n")
+    print("Xb = Binv . b\n")
     b = np.array([restricoes[i][-1] for i in range(len(restricoes))])
     print("b: ", b, "\n")
     try: # Verifica se a matriz base possui inversa
@@ -268,15 +281,15 @@ def simplex(func_obj, restricoes):
       print("A matriz base não possui inversa.")
       sys.exit(1)
     Xb = np.matmul(Binv, b)
-    print("Binv:", Binv, "\n")
+    print("Binv:\n", Binv, "\n")
     print("Xb:", Xb, "\n")
 
     # Passo 2: calcular os custos relativos
     print("///////// Passo 2: calcular os custos relativos\n")
-    print("i- λt = Cbt . Binv\nii- Cn = Cnj - λt . anj \niii- Cnk = min (Cnj)\n")
+    print("i- λT = Cbt . Binv\nii- Cn = Cnj - λT . anj \niii- Cnk = min (Cnj)\n")
       # i)
     lambdaT = np.matmul(cbt, Binv)
-    print("lambdaT: ", lambdaT, "\n")
+    print("λT: ", lambdaT, "\n")
       # ii)
     Cn = np.array([cnt[i] - np.matmul(lambdaT, nao_base[:,i]) for i in range(len(nao_base[0]))])
     print("Cn: ", Cn, "\n")
@@ -306,7 +319,7 @@ def simplex(func_obj, restricoes):
     
 
     # Passo 4: calcular a solução simplex
-    print("///////// Passo 4: calcular o simplex")
+    print("///////// Passo 4: calcular o simplex\n")
     print("y = Binv . ank\n")
     ak = nao_base[:, k]
     print("Base B atual:\n", base)
@@ -365,9 +378,9 @@ def main():
 
   vars_solucao = simplex(np.array(ppl.get("func_obj")), np.array(ppl.get("restricoes")))
 
-  printFunc("Variaveis solução", vars_solucao)
+  printFunc("Variaveis solução", vars_solucao, True)
 
-  print("Variáveis de sobra: ", ppl.get("sobras"))
+  print("Sobras:", ppl.get("sobras"))
   solucao = 0
   for i in ppl.get("func_obj"):
     solucao += i * vars_solucao[ppl.get("func_obj").index(i)]
